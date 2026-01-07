@@ -64,42 +64,49 @@ public class LoginFrame extends JFrame {
 
 	private void login() {
 
-		String email = emailField.getText().trim().toLowerCase();
-		char[] password = passwordField.getPassword();
+        String email = emailField.getText().trim().toLowerCase();
+        char[] password = passwordField.getPassword();
 
-		if (email.isEmpty() || password.length == 0) {
-			JOptionPane.showMessageDialog(this, "Please fill all fields");
-			return;
-		}
+        if (email.isEmpty() || password.length == 0) {
+            JOptionPane.showMessageDialog(this, "Please fill all fields");
+            return;
+        }
 
-		try {
-			User user = userDao.findByEmail(email);
+        try {
+            User user = userDao.findByEmail(email);
+            String rawPassword = new String(password);
 
-			// ❌ LOGIN FAILED
-			if (user == null || !PasswordUtil.verifyPassword(new String(password), user.getPassword())) {
+            if (user == null || !PasswordUtil.verifyPassword(rawPassword, user.getPassword())) {
+                
+                auditDao.log("LOGIN_FAIL", email, email);
+                JOptionPane.showMessageDialog(this, "Invalid email or password", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                passwordField.setText("");
+                return;
+            }
 
-				auditDao.log("LOGIN_FAIL", email, email);
+            if (PasswordUtil.isLegacyHash(user.getPassword())) {
+                
+                String newBcryptHash = PasswordUtil.hashPassword(rawPassword);
+                
+                userDao.updatePasswordByEmail(user.getEmail(), newBcryptHash);
+               
+                user.setPassword(newBcryptHash);
+                
+                auditDao.log("PASSWORD_MIGRATED", email, email);
+            }
+            
+            auditDao.log("LOGIN_SUCCESS", email, email);
 
-				JOptionPane.showMessageDialog(this, "Invalid email or password", "Login Failed",
-						JOptionPane.ERROR_MESSAGE);
+            user.setSessionPassword(password);
 
-				passwordField.setText("");
-				return;
-			}
+            JOptionPane.showMessageDialog(this, "Welcome " + user.getFirstName());
 
-			// ✅ LOGIN SUCCESS
-			auditDao.log("LOGIN_SUCCESS", email, email);
+            dispose();
+            new FileVaultFrame(user);
 
-			// store session password (for vault unlock)
-			user.setSessionPassword(password);
-
-			JOptionPane.showMessageDialog(this, "Welcome " + user.getFirstName());
-
-			dispose();
-			new FileVaultFrame(user);
-
-		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, "Login failed. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
-		}
-	}
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Login failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 }

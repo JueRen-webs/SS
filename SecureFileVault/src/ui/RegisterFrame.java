@@ -73,7 +73,7 @@ public class RegisterFrame extends JFrame {
 			String hashed = PasswordUtil.hashPassword(new String(password));
 
 			// Vault metadata will be initialized on first login
-			User user = new User(first, last, email, hashed, role, null, null, null, 0);
+			User user = new User(first, last, email, hashed, role);
 
 			userDao.insert(user);
 
