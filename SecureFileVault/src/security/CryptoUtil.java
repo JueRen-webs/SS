@@ -12,12 +12,6 @@ public class CryptoUtil {
 	private static final int IV_LENGTH = 12; // bytes (GCM standard)
 	private static final int KEY_LENGTH = 256; // bits
 
-	// ===== AES KEY GENERATION (vault master key) =====
-	public static SecretKey generateKey() throws Exception {
-		KeyGenerator gen = KeyGenerator.getInstance("AES");
-		gen.init(KEY_LENGTH);
-		return gen.generateKey();
-	}
 
 	// ===== PBKDF2 KEY DERIVATION (KEK) =====
 	public static SecretKey deriveKey(char[] password, byte[] salt, int iterations) throws Exception {
@@ -32,10 +26,6 @@ public class CryptoUtil {
 		byte[] salt = new byte[16];
 		new SecureRandom().nextBytes(salt);
 		return salt;
-	}
-
-	public static SecretKey deriveKEK(char[] password, byte[] salt, int iterations) throws Exception {
-		return deriveKey(password, salt, iterations);
 	}
 
 	// ===== IV =====
@@ -56,16 +46,6 @@ public class CryptoUtil {
 		Cipher cipher = Cipher.getInstance(AES_ALGO);
 		cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH, iv));
 		return cipher.doFinal(cipherText);
-	}
-
-	// ===== WRAP / UNWRAP vault key bytes using KEK (AES-GCM) =====
-	public static byte[] wrapKey(SecretKey vaultKey, SecretKey kek, byte[] iv) throws Exception {
-		return encrypt(vaultKey.getEncoded(), kek, iv);
-	}
-
-	public static SecretKey unwrapKey(byte[] vaultKeyEnc, SecretKey kek, byte[] iv) throws Exception {
-		byte[] raw = decrypt(vaultKeyEnc, kek, iv);
-		return new SecretKeySpec(raw, "AES");
 	}
 
 	// ===== BASE64 HELPERS =====

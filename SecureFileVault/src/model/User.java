@@ -2,56 +2,48 @@ package model;
 
 public class User {
 
-	private String firstName;
-	private String lastName;
-	private String email;
-	private String password;
-	private String role;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String password;
+    private String role;
+    
+    // ✅ NEW: Stores the unique salt for this user's file vault
+    private String vaultSalt; 
 
-	// Runtime-only password
-	private transient char[] sessionPassword;
+    // Runtime-only password (not stored in DB, just in memory)
+    private transient char[] sessionPassword;
 
-	// ✅ FULL constructor (LOGIN)
-	public User(String firstName, String lastName, String email, String password, String role) {
+    // ✅ UPDATED Constructor: Now accepts 'vaultSalt'
+    public User(String firstName, String lastName, String email, String password, String role, String vaultSalt) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.vaultSalt = vaultSalt;
+    }
 
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.email = email;
-		this.password = password;
-		this.role = role;
-	}
+    // ===== GETTERS =====
+    public String getFirstName() { return firstName; }
+    public String getLastName() { return lastName; }
+    public String getEmail() { return email; }
+    public String getPassword() { return password; }
+    public String getRole() { return role; }
 
-	// ===== GETTERS =====
-	public String getFirstName() {
-		return firstName;
-	}
+    // ✅ NEW Getter for Salt
+    public String getVaultSalt() { return vaultSalt; }
 
-	public String getLastName() {
-		return lastName;
-	}
+    // ===== SESSION PASSWORD =====
+    public void setSessionPassword(char[] sessionPassword) {
+        this.sessionPassword = sessionPassword;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public char[] getSessionPassword() {
+        return sessionPassword;
+    }
 
-	public String getPassword() {
-		return password;
-	}
-
-	public String getRole() {
-		return role;
-	}
-
-	// ===== SESSION PASSWORD =====
-	public void setSessionPassword(char[] sessionPassword) {
-		this.sessionPassword = sessionPassword;
-	}
-
-	public char[] getSessionPassword() {
-		return sessionPassword;
-	}
-	
-	public void setPassword(String password) {
-		this.password=password;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

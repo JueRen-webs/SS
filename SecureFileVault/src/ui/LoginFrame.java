@@ -6,64 +6,98 @@ import model.User;
 import security.PasswordUtil;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.util.Arrays;
 
 public class LoginFrame extends JFrame {
 
-	private JTextField emailField;
-	private JPasswordField passwordField;
+    private JTextField emailField;
+    private JPasswordField passwordField;
 
-	private final UserDAO userDao = new UserDAO();
-	private final AuditLogDAO auditDao = new AuditLogDAO();
+    private final UserDAO userDao = new UserDAO();
+    private final AuditLogDAO auditDao = new AuditLogDAO();
 
-	public LoginFrame() {
+    public LoginFrame() {
+        setTitle("Secure Vault - Login");
+        setSize(420, 320); 
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-		setTitle("User Login");
-		setSize(360, 220);
-		setLocationRelativeTo(null);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setLayout(new BorderLayout(10, 10));
+        // --- 1. Header (Monospaced + Dark Blue) ---
+        JPanel headerPanel = new JPanel();
+        headerPanel.setBackground(new Color(44, 62, 80)); 
+        JLabel headerLabel = new JLabel("SYSTEM AUTHENTICATION");
+        headerLabel.setForeground(Color.WHITE);
+        headerLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
+        headerPanel.add(headerLabel);
+        add(headerPanel, BorderLayout.NORTH);
 
-		// ===== FORM =====
-		JPanel form = new JPanel(new GridLayout(2, 2, 5, 5));
-		form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // --- 2. Form Panel (Custom Inputs) ---
+        JPanel form = new JPanel(new GridLayout(2, 2, 10, 20));
+        form.setBorder(new EmptyBorder(30, 40, 20, 40));
 
-		form.add(new JLabel("Email:"));
-		emailField = new JTextField();
-		form.add(emailField);
+        // 定义输入框样式：灰色边框 + 左右内边距
+        LineBorder lineBorder = new LineBorder(new Color(189, 195, 199), 1);
+        EmptyBorder padding = new EmptyBorder(5, 8, 5, 8);
+        CompoundBorder niceBorder = new CompoundBorder(lineBorder, padding);
 
-		form.add(new JLabel("Password:"));
-		passwordField = new JPasswordField();
-		form.add(passwordField);
+        form.add(new JLabel("Email Address:"));
+        emailField = new JTextField();
+        emailField.setBorder(niceBorder); // 应用新边框
+        form.add(emailField);
 
-		add(form, BorderLayout.CENTER);
+        form.add(new JLabel("Password:"));
+        passwordField = new JPasswordField();
+        passwordField.setBorder(niceBorder); // 应用新边框
+        form.add(passwordField);
 
-		// ===== BUTTONS =====
-		JButton loginBtn = new JButton("Login");
-		JButton registerUserBtn = new JButton("Register User");
-		JButton registerAdminBtn = new JButton("Register Admin");
+        add(form, BorderLayout.CENTER);
 
-		// ✅ FIXED HERE
-		if (userDao.adminExists()) {
-			registerAdminBtn.setEnabled(false);
-			registerAdminBtn.setToolTipText("Admin already registered");
-		}
+        // --- 3. Button Panel (Styled Buttons) ---
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 15));
+        
+        JButton loginBtn = new JButton("Login");
+        JButton registerUserBtn = new JButton("Register User");
+        JButton registerAdminBtn = new JButton("Register Admin");
 
-		JPanel btnPanel = new JPanel();
-		btnPanel.add(loginBtn);
-		btnPanel.add(registerUserBtn);
-		btnPanel.add(registerAdminBtn);
-		add(btnPanel, BorderLayout.SOUTH);
+        // 使用下方定义的方法来设置按钮颜色
+        styleButton(loginBtn, new Color(46, 204, 113));      // 绿色
+        styleButton(registerUserBtn, new Color(52, 152, 219)); // 蓝色
+        styleButton(registerAdminBtn, new Color(220, 220, 220)); // 灰色
 
-		loginBtn.addActionListener(e -> login());
-		registerUserBtn.addActionListener(e -> new RegisterFrame("USER"));
-		registerAdminBtn.addActionListener(e -> new RegisterFrame("ADMIN"));
+        if (userDao.adminExists()) {
+            registerAdminBtn.setEnabled(false);
+        }
 
-		setVisible(true);
-	}
+        btnPanel.add(loginBtn);
+        btnPanel.add(registerUserBtn);
+        btnPanel.add(registerAdminBtn);
+        add(btnPanel, BorderLayout.SOUTH);
 
-	private void login() {
+        // Listeners
+        loginBtn.addActionListener(e -> login());
+        registerUserBtn.addActionListener(e -> new RegisterFrame("USER"));
+        registerAdminBtn.addActionListener(e -> new RegisterFrame("ADMIN"));
 
+        getRootPane().setDefaultButton(loginBtn);
+        setVisible(true);
+    } // <--- 构造函数结束
+
+    // ✅ 这个方法必须在构造函数外面
+    private void styleButton(JButton btn, Color bgColor) {
+        btn.setBackground(bgColor);
+        btn.setForeground(Color.WHITE);        
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btn.setOpaque(true);
+        btn.setBorderPainted(false); // 让按钮看起来更扁平
+    }
+
+    private void login() {
         String email = emailField.getText().trim().toLowerCase();
         char[] password = passwordField.getPassword();
 
@@ -77,36 +111,20 @@ public class LoginFrame extends JFrame {
             String rawPassword = new String(password);
 
             if (user == null || !PasswordUtil.verifyPassword(rawPassword, user.getPassword())) {
-                
                 auditDao.log("LOGIN_FAIL", email, email);
-                JOptionPane.showMessageDialog(this, "Invalid email or password", "Login Failed", JOptionPane.ERROR_MESSAGE);
-                passwordField.setText("");
+                JOptionPane.showMessageDialog(this, "Invalid credentials", "Login Failed", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            if (PasswordUtil.isLegacyHash(user.getPassword())) {
-                
-                String newBcryptHash = PasswordUtil.hashPassword(rawPassword);
-                
-                userDao.updatePasswordByEmail(user.getEmail(), newBcryptHash);
-               
-                user.setPassword(newBcryptHash);
-                
-                auditDao.log("PASSWORD_MIGRATED", email, email);
-            }
-            
             auditDao.log("LOGIN_SUCCESS", email, email);
-
             user.setSessionPassword(password);
-
-            JOptionPane.showMessageDialog(this, "Welcome " + user.getFirstName());
-
             dispose();
             new FileVaultFrame(user);
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Login failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            Arrays.fill(password, '0');
         }
     }
-}
+} // <--- 类结束
