@@ -40,19 +40,18 @@ public class LoginFrame extends JFrame {
         JPanel form = new JPanel(new GridLayout(2, 2, 10, 20));
         form.setBorder(new EmptyBorder(30, 40, 20, 40));
 
-        // 定义输入框样式：灰色边框 + 左右内边距
         LineBorder lineBorder = new LineBorder(new Color(189, 195, 199), 1);
         EmptyBorder padding = new EmptyBorder(5, 8, 5, 8);
         CompoundBorder niceBorder = new CompoundBorder(lineBorder, padding);
 
         form.add(new JLabel("Email Address:"));
         emailField = new JTextField();
-        emailField.setBorder(niceBorder); // 应用新边框
+        emailField.setBorder(niceBorder); 
         form.add(emailField);
 
         form.add(new JLabel("Password:"));
         passwordField = new JPasswordField();
-        passwordField.setBorder(niceBorder); // 应用新边框
+        passwordField.setBorder(niceBorder); 
         form.add(passwordField);
 
         add(form, BorderLayout.CENTER);
@@ -64,10 +63,9 @@ public class LoginFrame extends JFrame {
         JButton registerUserBtn = new JButton("Register User");
         JButton registerAdminBtn = new JButton("Register Admin");
 
-        // 使用下方定义的方法来设置按钮颜色
-        styleButton(loginBtn, new Color(46, 204, 113));      // 绿色
-        styleButton(registerUserBtn, new Color(52, 152, 219)); // 蓝色
-        styleButton(registerAdminBtn, new Color(220, 220, 220)); // 灰色
+        styleButton(loginBtn, new Color(46, 204, 113));
+        styleButton(registerUserBtn, new Color(52, 152, 219)); 
+        styleButton(registerAdminBtn, new Color(220, 220, 220)); 
 
         if (userDao.adminExists()) {
             registerAdminBtn.setEnabled(false);
@@ -85,9 +83,7 @@ public class LoginFrame extends JFrame {
 
         getRootPane().setDefaultButton(loginBtn);
         setVisible(true);
-    } // <--- 构造函数结束
-
-    // ✅ 这个方法必须在构造函数外面
+    } 
     private void styleButton(JButton btn, Color bgColor) {
         btn.setBackground(bgColor);
         btn.setForeground(Color.WHITE);        
@@ -127,4 +123,4 @@ public class LoginFrame extends JFrame {
             Arrays.fill(password, '0');
         }
     }
-} // <--- 类结束
+} 
